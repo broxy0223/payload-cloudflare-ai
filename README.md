@@ -1,368 +1,196 @@
-# Payload AI Plugin
+# Payload Cloudflare AI
 
-<p align="center">
-  <img alt="Payload AI Plugin" src="assets/payload-ai-intro.gif" width="100%" />
-</p>
+AI-powered content generation for PayloadCMS, routed through **Cloudflare AI Gateway**.
 
-<p align="center">
-  <strong>Transform content creation with intelligent automation — your models, your way</strong>
-</p>
-
-<p align="center">
-  <img alt="Supported AI Providers" src="assets/providers.png" width="100%" />
-</p>
+No API keys in your codebase. No secrets in your Worker. All provider keys stored securely in the gateway via BYOK (Bring Your Own Key). One token authenticates everything.
 
 ---
 
-## 🚀 What is this?
+## Supported Providers
 
-The Payload AI Plugin is your secret weapon for turbocharged content creation. It seamlessly integrates cutting-edge AI capabilities directly into [Payload CMS](https://payloadcms.com), turning your content workflow from tedious to tremendous.
+All providers supported by Cloudflare AI Gateway:
 
-### 🎥 See It in Action
+| Provider | Models | Use Case |
+|----------|--------|----------|
+| **Anthropic** | Claude Opus, Sonnet, Haiku | Long-form content, nuanced writing |
+| **Google AI Studio** | Gemini Pro, Flash, Imagen | Translation, summarization, images |
+| **OpenAI** | GPT-4o, DALL-E, TTS | General purpose, images, audio |
+| **Groq** | Llama 3.3, Mixtral | Fast inference |
+| **Mistral** | Large, Medium, Codestral | European AI, code generation |
+| **Perplexity** | Sonar Pro, Reasoning | Research-grounded content |
+| **OpenRouter** | 200+ models | Access any model through one key |
+| **DeepSeek** | Chat, Reasoner | Cost-effective reasoning |
+| **xAI** | Grok 3, Grok 2 | Real-time knowledge |
+| **Cohere** | Command R+ | Enterprise search and RAG |
+| **Amazon Bedrock** | Various | AWS-hosted models |
+| **Azure OpenAI** | GPT-4, etc. | Azure-hosted OpenAI models |
+| **Workers AI** | Cloudflare models | Edge inference |
+| **HuggingFace** | Open source models | Community models |
+| **Replicate** | Various | Run any open model |
 
-- **[Quick Demo](https://youtu.be/qaYukeGpuu4)** - Watch the magic happen
-- **[Extended Demo](https://youtu.be/LEsuHbKalNY)** - Deep dive into all features
-- **[Customization Guide](guide.md)** - Make it your own
-
----
-
-## ⚠️ Beta Notice
-
-This plugin is actively evolving. We're constantly shipping improvements and new features. Tested with Payload v3.38.0.
-
-**Quick Start Tip:** Try it out with [Payload's website template](https://github.com/payloadcms/payload/tree/main/templates/website) for the smoothest experience.
-
----
-
-## ✨ Features
-
-### 📝 Text & RichText Fields
-
-**Content Generation Magic:**
-- ✅ **Compose** - Generate content from scratch
-- ✅ **Proofread** - Polish your prose (Beta)
-- ✅ **Translate** - Break language barriers
-- ✅ **Rephrase** - Find better ways to say it (Beta)
-- 🔜 **Expand** - Elaborate on ideas
-- 🔜 **Summarize** - Distill the essence
-- 🔜 **Simplify** - Make complex things clear
-
-### 🎨 Upload Fields
-
-- 🎙️ **Voice Generation** - Powered by ElevenLabs & OpenAI
-- 🖼️ **Image Generation** - Powered by OpenAI (DALL-E & GPT-Image-1)
-
-### 🔧 Power User Features
-
-- 🔌 **Bring Your Own Model** - Not limited to our defaults
-- 🎛️ **Field-Level Prompts** - Customize AI behavior per field
-- 🔐 **Access Control** - Lock down who can use AI features
-- 🧠 **Prompt Editor** - Fine-tune AI instructions
-- 🌍 **i18n Support** - Works with your multilingual setup
-- 🎨 **Custom Components** - Extend with your own UI
-
-### 🔜 Coming Soon
-
-- 📊 Document Analyzer
-- ✅ Fact Checking
-- 🔄 Automated Workflows
-- 💡 Editor Suggestions
-- 💬 AI Chat Assistant
+As Cloudflare adds new providers to AI Gateway, they become available automatically.
 
 ---
 
-## 📦 Installation
+## How It Works
 
-```bash
-pnpm add @ai-stack/payloadcms
+```
+Editor clicks "Compose" in Payload admin
+        |
+        v
+Plugin checks: editor override > operation default > global default > first available
+        |
+        v
+Request routed to: gateway.ai.cloudflare.com/v1/{account}/{gateway}/{provider}
+  with header: cf-aig-authorization: Bearer {token}
+        |
+        v
+AI Gateway: authenticates, injects BYOK key, logs, caches, rate limits
+        |
+        v
+Response streams back to editor
 ```
 
-That's it! Now let's configure it.
+---
+
+## Features
+
+**Content Operations:** Compose, Translate, Proofread, Summarize, Expand, Simplify, Rephrase, Tone adjustment
+
+**Image Generation:** DALL-E, GPT-Image-1, Google Imagen
+
+**Audio Generation:** OpenAI TTS, ElevenLabs
+
+**Admin Panel:**
+- AI Settings page — configure providers, set per-operation defaults
+- Test Connection — verify BYOK keys for each provider
+- Model Selector — editors choose which model to use per generation
+- Per-operation routing — Compose uses Claude, Translate uses Gemini, etc.
+
+**Gateway Benefits (automatic):**
+- Request logging with token counts and cost
+- Analytics dashboard
+- Response caching at the edge
+- Rate limiting
+- Content guardrails
 
 ---
 
-## 🛠️ Quick Setup
+## Quick Start
 
-### Step 1: Configure the Plugin
+### 1. Create AI Gateway
 
-Add to `src/payload.config.ts`:
+Cloudflare Dashboard > AI > AI Gateway > Create Gateway
+
+### 2. Add Provider Keys (BYOK)
+
+In your gateway settings, add API keys for providers you want. Keys are encrypted and stored in the gateway — your app never sees them.
+
+### 3. Enable Authentication
+
+In gateway settings, enable Authentication and create a token.
+
+### 4. Set Worker Secret
+
+```bash
+npx wrangler secret put AI_GATEWAY_TOKEN
+```
+
+### 5. Install
+
+```bash
+pnpm add payload-cloudflare-ai
+```
+
+### 6. Configure
 
 ```typescript
-import { payloadAiPlugin } from '@ai-stack/payloadcms'
+import { payloadAiPlugin } from 'payload-cloudflare-ai'
 
 export default buildConfig({
   plugins: [
     payloadAiPlugin({
       collections: {
-        [Posts.slug]: true,
+        pages: true,
+        posts: true,
       },
-      debugging: false,
     }),
   ],
-  // ... rest of your config
 })
 ```
 
-### Step 2: Enable AI in Your Fields
+### 7. Set Environment Variables
 
-Add to your RichText fields (e.g., `src/collections/Posts/index.ts`):
-
-```typescript
-import { PayloadAiPluginLexicalEditorFeature } from '@ai-stack/payloadcms'
-
-fields: [
-  {
-    name: 'content',
-    type: 'richText',
-    editor: lexicalEditor({
-      features: ({ rootFeatures }) => {
-        return [
-          HeadingFeature({ enabledHeadingSizes: ['h1', 'h2', 'h3', 'h4'] }),
-          // Add this line:
-          PayloadAiPluginLexicalEditorFeature(),
-        ]
-      },
-    }),
-  },
-]
-```
-
-### Step 3: Add Your API Keys
-
-Create a `.env` file in your project root. Add the keys for the providers you want to use:
 ```env
-# Text Generation - Choose your provider(s)
-OPENAI_API_KEY=your-openai-api-key           # OpenAI models (GPT-4, etc.)
-ANTHROPIC_API_KEY=your-anthropic-api-key     # Claude models
-GOOGLE_GENERATIVE_AI_API_KEY=your-google-key # Gemini models
-
-# Image Generation - Choose your provider(s)
-OPENAI_API_KEY=your-openai-api-key           # DALL-E (uses same key as above)
-# OPENAI_ORG_ID=your-org-id                  # Required only for GPT-Image-1 model
-GOOGLE_GENERATIVE_AI_API_KEY=your-google-key # Imagen (uses same key as above)
-
-# Audio/Voice Generation - Choose your provider(s)
-ELEVENLABS_API_KEY=your-elevenlabs-api-key   # ElevenLabs voices
-OPENAI_API_KEY=your-openai-api-key           # OpenAI TTS (uses same key as above)
-
-# Optional: Use custom OpenAI-compatible endpoint
-# OPENAI_BASE_URL=https://api.openai.com/v1
+AI_GATEWAY_NAME=your-gateway-name
+AI_GATEWAY_TOKEN=your-gateway-token
+CLOUDFLARE_ACCOUNT_ID=your-account-id
 ```
 
-**You only need the keys for the providers you plan to use.** Mix and match based on your preferences!
-
-
-**Important:** Restart your server after updating `.env` or plugin settings!
-
-You may also need to regenerate the import map:
-```bash
-payload generate:importmap
-```
+That's it. No `OPENAI_API_KEY`, no `ANTHROPIC_API_KEY`, no provider secrets in your app.
 
 ---
 
-## ⚙️ Advanced Configuration
+## Full Setup Guide
 
-<details>
-<summary><strong>🔐 Access Control & Multi-Tenant Setup</strong></summary>
+See **[docs/SETUP.md](docs/SETUP.md)** for complete step-by-step instructions including migration, deployment, admin configuration, and troubleshooting.
+
+---
+
+## Environment Variables
+
+| Variable | Required | Purpose |
+|----------|----------|---------|
+| `AI_GATEWAY_TOKEN` | Yes | Authenticates requests to CF AI Gateway |
+| `AI_GATEWAY_NAME` | Yes | Your gateway name |
+| `CLOUDFLARE_ACCOUNT_ID` | Yes | Your CF account ID |
+
+No provider API keys needed. BYOK handles that.
+
+---
+
+## Configuration
 
 ```typescript
-import { payloadAiPlugin } from '@ai-stack/payloadcms'
+payloadAiPlugin({
+  // Collections to enable AI on
+  collections: { pages: true, posts: true },
+  globals: { homepage: true },
 
-export default buildConfig({
-  plugins: [
-    payloadAiPlugin({
-      collections: {
-        [Posts.slug]: true,
-      },
-      
-      // Enable AI for globals too
-      globals: {
-        [Home.slug]: true,
-      },
+  // Access control
+  access: {
+    generate: ({ req }) => req.user?.role === 'admin',
+    settings: ({ req }) => req.user?.role === 'admin',
+  },
 
-      // Development helpers
-      debugging: false,
-      disableSponsorMessage: false,
-      generatePromptOnInit: process.env.NODE_ENV !== 'production',
-
-      // Specify media collection for GPT-Image-1
-      uploadCollectionSlug: "media",
-
-      // Lock down AI features
-      access: {
-        generate: ({ req }) => req.user?.role === 'admin',
-        settings: ({ req }) => req.user?.role === 'admin',
-      },
-
-      // Customize language options
-      options: {
-        enabledLanguages: ["en-US", "zh-SG", "zh-CN", "en"],
-      },
-
-      // Reference additional fields in prompts
-      promptFields: [
-        {
-          name: 'url',
-          collections: ['images'],
-        },
-        {
-          name: 'markdown',
-          async getter(doc, {collection}) {
-            return docToMarkdown(collection, doc)
-          }
-        }
-      ],
-
-      // Control initial prompt generation
-      seedPrompts: ({path}) => {
-        if (path.endsWith('.meta.description')) {
-          return {
-            data: {
-              prompt: 'Generate SEO-friendly meta description: {{markdown}}',
-            }
-          }
-        }
-        if (path.endsWith('.slug')) return false // Disable for slugs
-        return undefined // Use defaults
-      },
-
-      // Custom media upload (useful for multi-tenant)
-      mediaUpload: async (result, { request, collection }) => {
-        return request.payload.create({
-          collection,
-          data: result.data,
-          file: result.file,
-        })
-      },
-    }),
-  ],
+  // Development
+  debugging: false,
+  generatePromptOnInit: true,
 })
 ```
 
-</details>
+---
 
-<details>
-<summary><strong>🎨 Custom Components & Fields</strong></summary>
+## Security
 
-Custom fields don't automatically inherit AI capabilities. If your AI-enabled fields don't show Compose settings, manually add this component path:
-
-```
-@ai-stack/payloadcms/fields#ComposeField
-```
-
-**Debug Tip:** Enable `debugging: true` in your plugin config to see which fields have AI enabled.
-
-</details>
+- No API keys in your codebase or Worker secrets
+- Gateway authentication mandatory (plugin won't activate without token)
+- All AI features require authenticated admin user by default
+- Every request logged in gateway with user, model, tokens, cost
+- Rate limiting configurable in gateway settings
 
 ---
 
-## 📚 Documentation
+## Attribution
 
-Need more details? Check out the **[Complete Setup Guide](guide.md)** for:
-- Custom model configuration
-- Advanced prompt engineering
-- Field-specific customization
-- Troubleshooting tips
-
----
-
-## 🤝 Support This Project
-
-Built with ❤️ in my free time. If this plugin saves you hours of work, consider fueling future development!
+This plugin is forked from [@ai-stack/payloadcms](https://github.com/ashbuilds/payload-ai) by **ashbuilds**, who built the original Payload AI plugin. If the original plugin helped you, consider supporting the author:
 
 <a href="https://www.buymeacoffee.com/ashbuilds" target="_blank">
   <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" height="60" width="217" />
 </a>
 
-Every coffee keeps the AI models running and new features shipping. Thank you! 🙏
-
 ---
 
-## 👥 Contributing
+## License
 
-We love contributors! Whether you're fixing typos, suggesting features, or building new capabilities, all contributions are welcome.
-
-### Ways to Contribute
-
-- 🐛 Report bugs
-- 💡 Suggest features
-- 📖 Improve documentation
-- 🔧 Submit pull requests
-
-Join the conversation on [Payload's Discord](https://discord.com/channels/967097582721572934/1264949995656843345) and let's build something amazing together!
-
-### Local Development
-
-Want to hack on the plugin? Here's how:
-
-#### Prerequisites
-
-- Node.js (version in `.nvmrc`)
-- pnpm
-- Database connection (Postgres or MongoDB)
-- Optional: AI provider API keys
-
-#### Setup
-
-```bash
-# 1. Install dependencies
-pnpm install
-
-# 2. Set up environment
-cp dev/.env.example dev/.env
-# Edit dev/.env with your DATABASE_URI, PAYLOAD_SECRET, and API keys
-
-# 3. Start development server
-pnpm dev
-# Admin UI available at http://localhost:3000
-
-# 4. Generate types/importmap if needed
-pnpm generate:importmap
-pnpm generate:types
-```
-
-#### Development Workflow
-
-- Plugin source: `src/`
-- Test app: `dev/`
-- Edit files in `src/` and refresh to see changes
-
-#### Testing & Quality
-
-```bash
-pnpm test                    # Run all tests
-pnpm lint                    # ESLint
-pnpm prettier --write .      # Format code
-pnpm build                   # Build plugin
-```
-
-#### Test in Another Project
-
-```bash
-pnpm pack
-# In your other project:
-pnpm add /path/to/ai-plugin-*.tgz
-```
-
-#### Project Structure
-
-```
-├── src/              # Plugin source code
-├── dev/              # Test Payload app
-│   ├── int.spec.ts   # Integration tests
-│   └── e2e.spec.ts   # E2E tests
-└── README.md         # You are here!
-```
-
----
-
-<p align="center">
-  Made with ❤️ and ☕ by the community
-</p>
-
-<p align="center">
-  <a href="https://github.com/ashbuilds/payload-ai">Star on GitHub</a> •
-  <a href="https://discord.com/channels/967097582721572934/1264949995656843345">Join Discord</a> •
-  <a href="guide.md">Read the Guide</a>
-</p>
+MIT
