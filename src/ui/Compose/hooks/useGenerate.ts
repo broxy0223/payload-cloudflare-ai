@@ -20,7 +20,7 @@ import { useHistory } from './useHistory.js'
 
 type ActionCallbackParams = { action: ActionMenuItems; params?: unknown }
 
-export const useGenerate = ({ instructionId }: { instructionId: string }) => {
+export const useGenerate = ({ instructionId, modelOverride }: { instructionId: string; modelOverride?: string }) => {
   // Create a ref to hold the current instructionId
   const instructionIdRef = useRef(instructionId)
 
@@ -151,6 +151,7 @@ export const useGenerate = ({ instructionId }: { instructionId: string }) => {
         action,
         actionParams: params,
         instructionId: currentInstructionId,
+        modelOverride,
       }
 
       submit({
@@ -163,7 +164,7 @@ export const useGenerate = ({ instructionId }: { instructionId: string }) => {
         options,
       })
     },
-    [localFromContext?.code, instructionIdRef, documentId],
+    [localFromContext?.code, instructionIdRef, documentId, modelOverride],
   )
 
   const generateUpload = useCallback(async () => {

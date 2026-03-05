@@ -10,6 +10,7 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { PLUGIN_INSTRUCTIONS_TABLE } from '../../defaults.js'
 import { setSafeLexicalState } from '../../utilities/setSafeLexicalState.js'
 import { PluginIcon } from '../Icons/Icons.js'
+import { ModelSelector } from '../ModelSelector/ModelSelector.js'
 import styles from './compose.module.css'
 import { useMenu } from './hooks/menu/useMenu.js'
 import { useActiveFieldTracking } from './hooks/useActiveFieldTracking.js'
@@ -39,7 +40,8 @@ export const Compose: FC<ComposeProps> = ({ descriptionProps, instructionId, isC
   useActiveFieldTracking()
 
   const [isProcessing, setIsProcessing] = useState<boolean>(false)
-  const { generate, isLoading, stop } = useGenerate({ instructionId })
+  const [modelOverride, setModelOverride] = useState<string | undefined>(undefined)
+  const { generate, isLoading, stop } = useGenerate({ instructionId, modelOverride })
 
   const { ActiveComponent, Menu } = useMenu(
     {
@@ -177,6 +179,7 @@ export const Compose: FC<ComposeProps> = ({ descriptionProps, instructionId, isC
         }}
       />
       {memoizedPopup}
+      <ModelSelector onChange={setModelOverride} value={modelOverride} />
       <ActiveComponent isLoading={isProcessing || isLoading} stop={stop} />
       <UndoRedoActions
         onChange={(val) => {
