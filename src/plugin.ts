@@ -10,6 +10,8 @@ import { instructionsCollection } from './collections/Instructions.js'
 import { PLUGIN_NAME } from './defaults.js'
 import { fetchFields } from './endpoints/fetchFields.js'
 import { endpoints } from './endpoints/index.js'
+import { testProviderEndpoint } from './endpoints/testProvider.js'
+import { aiSettingsGlobal } from './globals/AISettings.js'
 import { init } from './init.js'
 import { translations } from './translations/index.js'
 import { getGenerationModels } from './utilities/getGenerationModels.js'
@@ -152,8 +154,9 @@ const payloadAiPlugin =
         },
       }
 
+      const AISettings = aiSettingsGlobal(pluginConfig)
       const collections = [...(incomingConfig.collections ?? []), Instructions]
-      const globals = [...(incomingConfig.globals ?? [])]
+      const globals = [...(incomingConfig.globals ?? []), AISettings]
       const { collections: collectionSlugs, globals: globalsSlugs } = pluginConfig
 
       const { components: { providers = [] } = {} } = incomingConfig.admin || {}
@@ -191,6 +194,7 @@ const payloadAiPlugin =
           pluginEndpoints.textarea,
           pluginEndpoints.upload,
           fetchFields(pluginConfig),
+          testProviderEndpoint(pluginConfig),
         ],
         globals: globals.map((global) => {
           if (globalsSlugs?.[global.slug]) {
