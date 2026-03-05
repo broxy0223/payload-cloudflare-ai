@@ -78,7 +78,7 @@ export const updateFieldsConfig = (
               clientProps: {
                 schemaPath: currentSchemaPath,
               },
-              path: '@ai-stack/payloadcms/fields#ComposeField',
+              path: 'payload-cloudflare-ai/fields#ComposeField',
             },
             ...customField,
           },

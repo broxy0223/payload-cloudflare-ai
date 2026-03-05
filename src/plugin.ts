@@ -29,38 +29,21 @@ const defaultPluginConfig: PluginConfig = {
   generationModels: defaultGenerationModels,
 }
 
-const sponsorMessage = `
+const startupMessage = `
 ╔═══════════════════════════════════════════════════════════════╗
-║       THANK YOU FOR USING THE PAYLOAD AI PLUGIN!              ║
+║       PAYLOAD CLOUDFLARE AI GATEWAY PLUGIN                    ║
 ║                                                               ║
-║  If this plugin makes your life easier, please                ║
-║  consider supporting its development and maintenance:         ║
+║  All AI operations route through Cloudflare AI Gateway.       ║
+║  Authentication required by default for all AI features.      ║
 ║                                                               ║
-║    • Buy me a coffee: https://buymeacoffee.com/ashbuilds      ║
-║    • Sponsor on GitHub: https://github.com/sponsors/ashbuilds ║
+║  Configure providers in Admin > AI Settings.                  ║
 ║                                                               ║
-║  Your support fuels continued improvements,                   ║
-║  new features, and more caffeinated coding sessions! ☕        ║
+║  Forked from @ai-stack/payloadcms by ashbuilds.               ║
+║  Support the original author:                                 ║
+║    • https://buymeacoffee.com/ashbuilds                       ║
+║    • https://github.com/sponsors/ashbuilds                    ║
 ║                                                               ║
-║  Got feedback or need help? Submit an issue here:             ║
-║    • https://github.com/ashbuilds/payload-ai/issues/new       ║
-║                                                               ║
-║  Thank you again, and happy building!                         ║
-╚═══════════════════════════════════════════════════════════════╝
-`
-
-const securityMessage = `
-╔═══════════════════════════════════════════════════════════════╗
-║                    SECURITY NOTICE                            ║
-║                                                               ║
-║  The AI Plugin now requires authentication by default.        ║
-║  All AI features are restricted to authenticated users.       ║
-║                                                               ║
-║  To customize access control, configure the 'access' option   ║
-║  in your plugin settings. See documentation for details.      ║
-║                                                               ║
-║  If you need different access patterns, please configure      ║
-║  them explicitly in your plugin configuration.                ║
+║  Issues: https://github.com/broxy0223/payload-cloudflare-ai  ║
 ╚═══════════════════════════════════════════════════════════════╝
 `
 
@@ -163,7 +146,7 @@ const payloadAiPlugin =
       const updatedProviders = [
         ...(providers ?? []),
         {
-          path: '@ai-stack/payloadcms/client#InstructionsProvider',
+          path: 'payload-cloudflare-ai/client#InstructionsProvider',
         },
       ]
 
@@ -230,11 +213,8 @@ const payloadAiPlugin =
         .finally(() => {
           if (!pluginConfig.disableSponsorMessage) {
             setTimeout(() => {
-              payload.logger.info(securityMessage)
+              payload.logger.info(startupMessage)
             }, 1000)
-            setTimeout(() => {
-              payload.logger.info(sponsorMessage)
-            }, 3000)
           }
         })
     }

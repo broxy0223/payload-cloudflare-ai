@@ -1,11 +1,18 @@
 {
-  "name": "@ai-stack/payloadcms",
-  "version": "3.2.26",
+  "name": "payload-cloudflare-ai",
+  "version": "0.1.0",
   "private": false,
-  "bugs": "https://github.com/ashbuilds/payload-ai/issues",
-  "repository": "https://github.com/ashbuilds/payload-ai",
+  "bugs": "https://github.com/broxy0223/payload-cloudflare-ai/issues",
+  "repository": "https://github.com/broxy0223/payload-cloudflare-ai",
   "license": "MIT",
-  "author": "ashbuilds",
+  "author": "ZeroArc (Fp Digital)",
+  "contributors": [
+    {
+      "name": "ashbuilds",
+      "url": "https://github.com/ashbuilds",
+      "note": "Original author of @ai-stack/payloadcms, from which this plugin was forked"
+    }
+  ],
   "type": "module",
   "keywords": [
     "payload",
@@ -138,7 +145,7 @@
   "publishConfig": {
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts",
-    "@ai-stack:registry": "https://registry.npmjs.org",
+    "registry": "https://registry.npmjs.org",
     "access": "public",
     "provenance": true,
     "exports": {

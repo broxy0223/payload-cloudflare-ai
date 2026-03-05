@@ -129,7 +129,7 @@ export const instructionsCollection = (pluginConfig: PluginConfig) => {
                 filterByField: 'field-type',
                 options: modelOptions(pluginConfig),
               },
-              path: '@ai-stack/payloadcms/fields#SelectField',
+              path: 'payload-cloudflare-ai/fields#SelectField',
             },
           },
         },
@@ -165,7 +165,7 @@ export const instructionsCollection = (pluginConfig: PluginConfig) => {
                 ...(isLocalized ? { localized: true } : {}),
                 admin: {
                   components: {
-                    Field: '@ai-stack/payloadcms/fields#PromptEditorField',
+                    Field: 'payload-cloudflare-ai/fields#PromptEditorField',
                   },
                   description: "Click 'Compose' to run this custom prompt and generate content",
                 },
