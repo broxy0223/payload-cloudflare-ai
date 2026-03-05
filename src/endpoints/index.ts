@@ -17,6 +17,7 @@ import {
   PLUGIN_INSTRUCTIONS_TABLE,
   PLUGIN_NAME,
 } from '../defaults.js'
+import { AI_SETTINGS_SLUG } from '../globals/AISettings.js'
 import { asyncHandlebars } from '../libraries/handlebars/asyncHandlebars.js'
 import { registerEditorHelper } from '../libraries/handlebars/helpers.js'
 import { handlebarsHelpersMap } from '../libraries/handlebars/helpersMap.js'
@@ -25,6 +26,66 @@ import { extractImageData } from '../utilities/extractImageData.js'
 import { fieldToJsonSchema } from '../utilities/fieldToJsonSchema.js'
 import { getFieldBySchemaPath } from '../utilities/getFieldBySchemaPath.js'
 import { getGenerationModels } from '../utilities/getGenerationModels.js'
+
+import type { GenerationModel } from '../types.js'
+
+/**
+ * Resolve the best model for a generation request using the routing chain:
+ * 1. Editor's explicit model override (from request options)
+ * 2. AI Settings operation default for the current action
+ * 3. AI Settings global default model
+ * 4. Instruction's configured model-id (original behavior)
+ * 5. First available model (fallback)
+ */
+const resolveModel = async (
+  req: PayloadRequest,
+  action: string,
+  instructionModelId: string,
+  models: GenerationModel[],
+  editorModelOverride?: string,
+): Promise<GenerationModel | undefined> => {
+  if (!models || models.length === 0) return undefined
+
+  // 1. Editor's explicit override
+  if (editorModelOverride) {
+    const found = models.find((m) => m.id === editorModelOverride)
+    if (found) return found
+  }
+
+  // 2-3. Check AI Settings for operation default and global default
+  try {
+    const settings = await req.payload.findGlobal({ slug: AI_SETTINGS_SLUG })
+    if (settings) {
+      const opDefaults = settings.operationDefaults as Record<string, string> | undefined
+      const actionKey = action?.toLowerCase()
+
+      // 2. Operation-specific default
+      if (opDefaults && actionKey && opDefaults[actionKey]) {
+        const opModelId = opDefaults[actionKey]
+        const found = models.find((m) => m.id === opModelId)
+        if (found) return found
+      }
+
+      // 3. Global default
+      const globalDefault = settings.globalDefaultModel as string | undefined
+      if (globalDefault) {
+        const found = models.find((m) => m.id === globalDefault)
+        if (found) return found
+      }
+    }
+  } catch {
+    // AI Settings may not exist yet — fall through to instruction default
+  }
+
+  // 4. Instruction's configured model
+  if (instructionModelId) {
+    const found = models.find((m) => m.id === instructionModelId)
+    if (found) return found
+  }
+
+  // 5. First available model
+  return models[0]
+}
 
 const requireAuthentication = (req: PayloadRequest) => {
   if (!req.user) {
@@ -200,7 +261,7 @@ export const endpoints: (pluginConfig: PluginConfig) => Endpoints = (pluginConfi
           const data = await req.json?.()
 
           const { allowedEditorNodes = [], locale = 'en', options } = data
-          const { action, actionParams, instructionId } = options
+          const { action, actionParams, instructionId, modelOverride } = options
           const contextData = data.doc
 
           if (!instructionId) {
@@ -259,10 +320,13 @@ export const endpoints: (pluginConfig: PluginConfig) => Endpoints = (pluginConfi
           }
 
           const models = getGenerationModels(pluginConfig)
-          const model =
-            models && Array.isArray(models)
-              ? models.find((model) => model.id === instructions['model-id'])
-              : undefined
+          const model = await resolveModel(
+            req,
+            action,
+            instructions['model-id'],
+            models || [],
+            modelOverride,
+          )
 
           if (!model) {
             throw new Error('Model not found')
