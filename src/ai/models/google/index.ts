@@ -1,12 +1,20 @@
 import type { File } from 'payload'
-import { google } from '@ai-sdk/google'
+import { createGoogleGenerativeAI } from '@ai-sdk/google'
 
 import type { GenerationConfig } from '../../../types.js'
 
+import { buildGatewayBaseURL, gatewayHeaders } from '../../gateway.js'
 import { defaultSystemPrompt } from '../../prompts.js'
 import { generateFileNameByPrompt } from '../../utils/generateFileNameByPrompt.js'
 import { generateObject } from '../generateObject.js'
 import { generateImage } from './generateImage.js'
+
+const gatewayBaseURL = buildGatewayBaseURL('google')
+const google = createGoogleGenerativeAI({
+  apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY || 'byok-via-gateway',
+  ...(gatewayBaseURL ? { baseURL: gatewayBaseURL } : {}),
+  headers: gatewayHeaders(),
+})
 
 const MODEL_KEY = 'GEMINI'
 const MODELS = [

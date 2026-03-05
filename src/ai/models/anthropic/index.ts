@@ -1,9 +1,17 @@
-import { anthropic } from '@ai-sdk/anthropic'
+import { createAnthropic } from '@ai-sdk/anthropic'
 
 import type { GenerationConfig } from '../../../types.js'
 
+import { buildGatewayBaseURL, gatewayHeaders } from '../../gateway.js'
 import { defaultSystemPrompt } from '../../prompts.js'
 import { generateObject } from '../generateObject.js'
+
+const gatewayBaseURL = buildGatewayBaseURL('anthropic')
+const anthropic = createAnthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY || 'byok-via-gateway',
+  ...(gatewayBaseURL ? { baseURL: gatewayBaseURL } : {}),
+  headers: gatewayHeaders(),
+})
 
 const MODEL_KEY = 'ANTH-C'
 const MODELS = [
