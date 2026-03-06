@@ -8,6 +8,12 @@ export const fetchFields: (config: PluginConfig) => Endpoint = (config) => {
   const { access, options = {}, promptFields = [] } = config
   return {
     handler: async (req: PayloadRequest) => {
+      if (!req.user) {
+        return new Response(JSON.stringify({ error: 'Authentication required' }), {
+          headers: { 'Content-Type': 'application/json' },
+          status: 401,
+        })
+      }
       // Check if localization is enabled
       const { locales = [] } = req.payload.config.localization || {}
       const isLocalized = locales.length > 0

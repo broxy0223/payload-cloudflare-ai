@@ -53,50 +53,12 @@ export function createOpenAICompatibleConfig(config: OpenAICompatibleProviderCon
           ...options,
           system: options.system || defaultSystemPrompt,
         },
-        provider(options.model),
+        provider(options.model || config.defaultModel),
       )
     },
     output: 'text',
-    settings: {
-      name: `${config.modelKey}-text-settings`,
-      type: 'group',
-      admin: {
-        condition(data) {
-          return data['model-id'] === `${config.modelKey}-text`
-        },
-      },
-      fields: [
-        {
-          name: 'model',
-          type: 'select',
-          defaultValue: config.defaultModel,
-          label: 'Model',
-          options: config.models,
-        },
-        {
-          type: 'row',
-          fields: [
-            {
-              name: 'maxTokens',
-              type: 'number',
-              defaultValue: 5000,
-            },
-            {
-              name: 'temperature',
-              type: 'number',
-              defaultValue: 0.7,
-              max: 1,
-              min: 0,
-            },
-          ],
-        },
-        {
-          name: 'extractAttachments',
-          type: 'checkbox',
-        },
-      ],
-      label: `${config.providerLabel} Settings`,
-    },
+    // No per-instruction settings fields for OpenAI-compatible providers
+    // to avoid D1's column limit. These providers use their default model.
   }
 
   const objectModel: GenerationModel = {
@@ -110,50 +72,12 @@ export function createOpenAICompatibleConfig(config: OpenAICompatibleProviderCon
           ...options,
           system: options.system || defaultSystemPrompt,
         },
-        provider(options.model),
+        provider(options.model || config.defaultModel),
       )
     },
     output: 'text',
-    settings: {
-      name: `${config.modelKey}-object-settings`,
-      type: 'group',
-      admin: {
-        condition(data) {
-          return data['model-id'] === `${config.modelKey}-object`
-        },
-      },
-      fields: [
-        {
-          name: 'model',
-          type: 'select',
-          defaultValue: config.defaultModel,
-          label: 'Model',
-          options: config.models,
-        },
-        {
-          type: 'row',
-          fields: [
-            {
-              name: 'maxTokens',
-              type: 'number',
-              defaultValue: 5000,
-            },
-            {
-              name: 'temperature',
-              type: 'number',
-              defaultValue: 0.7,
-              max: 1,
-              min: 0,
-            },
-          ],
-        },
-        {
-          name: 'extractAttachments',
-          type: 'checkbox',
-        },
-      ],
-      label: `${config.providerLabel} Settings`,
-    },
+    // No per-instruction settings fields for OpenAI-compatible providers
+    // to avoid D1's column limit. These providers use their default model.
   }
 
   return {
