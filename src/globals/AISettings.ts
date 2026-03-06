@@ -3,12 +3,8 @@ import type { GlobalConfig } from 'payload'
 import type { PluginConfig } from '../types.js'
 
 import { GATEWAY_PROVIDER_SLUGS } from '../ai/gateway.js'
+import { allModelOptions } from '../ai/models/allModels.js'
 import { PLUGIN_NAME } from '../defaults.js'
-
-const providerOptions = Object.keys(GATEWAY_PROVIDER_SLUGS).map((key) => ({
-  label: key.charAt(0).toUpperCase() + key.slice(1).replace(/-/g, ' '),
-  value: key,
-}))
 
 const operationNames = [
   'compose',
@@ -63,6 +59,7 @@ export const aiSettingsGlobal = (pluginConfig: PluginConfig): GlobalConfig => ({
       type: 'array',
       admin: {
         description: 'Providers available through your AI Gateway. Test connections to verify BYOK keys are configured.',
+        isSortable: false,
       },
       defaultValue: Object.entries(GATEWAY_PROVIDER_SLUGS).map(([key]) => ({
         enabled: false,
@@ -75,9 +72,11 @@ export const aiSettingsGlobal = (pluginConfig: PluginConfig): GlobalConfig => ({
           fields: [
             {
               name: 'providerSlug',
-              type: 'select',
+              type: 'text',
+              admin: {
+                readOnly: true,
+              },
               label: 'Provider',
-              options: providerOptions,
               required: true,
             },
             {
@@ -85,6 +84,15 @@ export const aiSettingsGlobal = (pluginConfig: PluginConfig): GlobalConfig => ({
               type: 'checkbox',
               defaultValue: false,
               label: 'Enabled',
+            },
+            {
+              name: 'testConnection',
+              type: 'ui',
+              admin: {
+                components: {
+                  Field: 'payload-cloudflare-ai/fields#TestConnectionButton',
+                },
+              },
             },
           ],
         },
@@ -117,6 +125,7 @@ export const aiSettingsGlobal = (pluginConfig: PluginConfig): GlobalConfig => ({
         },
       ],
       label: 'Providers',
+      maxRows: Object.keys(GATEWAY_PROVIDER_SLUGS).length,
     },
     {
       name: 'operationDefaults',
@@ -126,21 +135,25 @@ export const aiSettingsGlobal = (pluginConfig: PluginConfig): GlobalConfig => ({
       },
       fields: operationNames.map((op) => ({
         name: op,
-        type: 'text' as const,
+        type: 'select' as const,
         admin: {
-          description: `Default model ID for ${op} operations (e.g., "claude-3-5-sonnet-latest")`,
+          description: `Default model for ${op} operations`,
+          isClearable: true,
         },
         label: op.charAt(0).toUpperCase() + op.slice(1),
+        options: allModelOptions,
       })),
       label: 'Operation Defaults',
     },
     {
       name: 'globalDefaultModel',
-      type: 'text',
+      type: 'select',
       admin: {
-        description: 'Fallback model ID used when no operation-specific default is set',
+        description: 'Fallback model used when no operation-specific default is set',
+        isClearable: true,
       },
       label: 'Global Default Model',
+      options: allModelOptions,
     },
   ],
   label: 'AI Settings',

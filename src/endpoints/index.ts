@@ -17,6 +17,7 @@ import {
   PLUGIN_INSTRUCTIONS_TABLE,
   PLUGIN_NAME,
 } from '../defaults.js'
+import { PROVIDER_TO_MODEL_ID } from '../ai/models/allModels.js'
 import { AI_SETTINGS_SLUG } from '../globals/AISettings.js'
 import { asyncHandlebars } from '../libraries/handlebars/asyncHandlebars.js'
 import { registerEditorHelper } from '../libraries/handlebars/helpers.js'
@@ -28,6 +29,29 @@ import { getFieldBySchemaPath } from '../utilities/getFieldBySchemaPath.js'
 import { getGenerationModels } from '../utilities/getGenerationModels.js'
 
 import type { GenerationModel } from '../types.js'
+
+/**
+ * Parse a "provider:model" value (from AI Settings selects) into a
+ * GenerationModel + model name override. Returns undefined if no match.
+ */
+const resolveProviderModel = (
+  providerModelValue: string,
+  models: GenerationModel[],
+): (GenerationModel & { _overrideModel?: string }) | undefined => {
+  if (!providerModelValue.includes(':')) return undefined
+
+  const colonIdx = providerModelValue.indexOf(':')
+  const providerKey = providerModelValue.substring(0, colonIdx)
+  const modelName = providerModelValue.substring(colonIdx + 1)
+
+  const modelId = PROVIDER_TO_MODEL_ID[providerKey]
+  if (!modelId) return undefined
+
+  const found = models.find((m) => m.id === modelId)
+  if (!found) return undefined
+
+  return { ...found, _overrideModel: modelName }
+}
 
 /**
  * Resolve the best model for a generation request using the routing chain:
@@ -43,7 +67,7 @@ const resolveModel = async (
   instructionModelId: string,
   models: GenerationModel[],
   editorModelOverride?: string,
-): Promise<GenerationModel | undefined> => {
+): Promise<(GenerationModel & { _overrideModel?: string }) | undefined> => {
   if (!models || models.length === 0) return undefined
 
   // 1. Editor's explicit override
@@ -59,16 +83,21 @@ const resolveModel = async (
       const opDefaults = settings.operationDefaults as Record<string, string> | undefined
       const actionKey = action?.toLowerCase()
 
-      // 2. Operation-specific default
+      // 2. Operation-specific default (now "provider:model" format)
       if (opDefaults && actionKey && opDefaults[actionKey]) {
-        const opModelId = opDefaults[actionKey]
-        const found = models.find((m) => m.id === opModelId)
+        const resolved = resolveProviderModel(opDefaults[actionKey], models)
+        if (resolved) return resolved
+        // Fallback: try direct model ID match (backwards compat)
+        const found = models.find((m) => m.id === opDefaults[actionKey])
         if (found) return found
       }
 
-      // 3. Global default
+      // 3. Global default (now "provider:model" format)
       const globalDefault = settings.globalDefaultModel as string | undefined
       if (globalDefault) {
+        const resolved = resolveProviderModel(globalDefault, models)
+        if (resolved) return resolved
+        // Fallback: try direct model ID match (backwards compat)
         const found = models.find((m) => m.id === globalDefault)
         if (found) return found
       }
@@ -396,8 +425,13 @@ export const endpoints: (pluginConfig: PluginConfig) => Endpoints = (pluginConfi
             req.payload.logger.error(e, '— AI Plugin: Error building field JSON schema')
           }
 
+          // If resolveModel returned a _overrideModel (from provider:model settings),
+          // use it as the model name, overriding the instruction's per-model setting.
+          const overrideModel = '_overrideModel' in model ? (model as any)._overrideModel : undefined
+
           return model.handler?.(prompts.prompt, {
             ...modelOptions,
+            ...(overrideModel ? { model: overrideModel } : {}),
             layout: prompts.layout,
             locale: localeInfo,
             schema: jsonSchema,
